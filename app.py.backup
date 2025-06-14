@@ -1,0 +1,71 @@
+@app.route('/similar-stations/analyze', methods=['POST'])
+def analyze_similar_stations():
+    """Level 3: Find similar weather stations"""
+    conn = get_db_connection()
+    
+    try:
+        ref_station = request.form.get('reference_station')
+        start_year = int(request.form.get('start_year', 2015))
+        end_year = int(request.form.get('end_year', 2020))
+        num_similar = int(request.form.get('num_similar', 5))
+        
+        # Get reference station info
+        ref_info = conn.execute('''
+            SELECT station_name, state FROM WeatherStation WHERE station_id = ?
+        ''', (ref_station,)).fetchone()
+        
+        # Calculate temperature change for reference station
+        ref_change = conn.execute('''
+            WITH ref_temps AS (
+                SELECT AVG(CASE WHEN dt.year = 2015 THEN cd.value END) as temp_2015,
+                       AVG(CASE WHEN dt.year = 2020 THEN cd.value END) as temp_2020
+                FROM ClimateData cd
+                JOIN DateTime dt ON cd.date = dt.date
+                JOIN ClimateMetric cm ON cd.metric_id = cm.metric_id
+                WHERE cd.station_id = ? AND cm.metric_code = 'TMAX'
+            )
+            SELECT temp_2015, temp_2020, 
+                   ROUND(((temp_2020 - temp_2015) / temp_2015 * 100), 2) as pct_change
+            FROM ref_temps
+        ''', (ref_station,)).fetchone()
+        
+        # Find similar stations
+        similar = conn.execute('''
+            WITH station_changes AS (
+                SELECT ws.station_id, ws.station_name, ws.state,
+                       AVG(CASE WHEN dt.year = 2015 THEN cd.value END) as temp_2015,
+                       AVG(CASE WHEN dt.year = 2020 THEN cd.value END) as temp_2020,
+                       ROUND(((AVG(CASE WHEN dt.year = 2020 THEN cd.value END) - 
+                              AVG(CASE WHEN dt.year = 2015 THEN cd.value END)) / 
+                              AVG(CASE WHEN dt.year = 2015 THEN cd.value END) * 100), 2) as pct_change
+                FROM WeatherStation ws
+                JOIN ClimateData cd ON ws.station_id = cd.station_id
+                JOIN DateTime dt ON cd.date = dt.date
+                JOIN ClimateMetric cm ON cd.metric_id = cm.metric_id
+                WHERE cm.metric_code = 'TMAX' AND ws.station_id != ?
+                GROUP BY ws.station_id
+            )
+            SELECT *, ABS(pct_change - ?) as difference
+            FROM station_changes
+            WHERE temp_2015 IS NOT NULL AND temp_2020 IS NOT NULL
+            ORDER BY difference ASC LIMIT ?
+        ''', (ref_station, ref_change['pct_change'], num_similar)).fetchall()
+        
+        # Analysis parameters for template
+        analysis_params = {
+            'start_year': start_year,
+            'end_year': end_year,
+            'num_similar': num_similar
+        }
+        
+        conn.close()
+        
+        return render_template('similar_stations_results.html', 
+                             ref_info=ref_info, 
+                             ref_change=ref_change, 
+                             similar=similar,
+                             analysis_params=analysis_params)
+        
+    except Exception as e:
+        conn.close()
+        return f"<h1>Error in Level 3 Analysis:</h1><p>{str(e)}</p><p><a href='/similar-stations'>Try Again</a></p>"

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather Station Results</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        h1 { color: blue; }
+        h2 { color: green; }
+        table { border: 1px solid black; border-collapse: collapse; width: 100%; }
+        td, th { border: 1px solid black; padding: 5px; }
+        th { background-color: lightgray; }
+        .summary { background-color: lightyellow; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Search Results</h1>
+    <p><a href="/weather-stations">Back to Search</a> | <a href="/">Home</a></p>
+    
+    <div class="summary">
+        <b>Search Summary:</b><br>
+        State: {{ search_params.state }}<br>
+        Latitude Range: {{ search_params.start_lat }} to {{ search_params.end_lat }}<br>
+        Found {{ stations|length }} weather stations.
+    </div>
+    
+    <h2>Table 1: Weather Station Details</h2>
+    {% if stations %}
+    <table>
+        <tr>
+            <th>Station Name</th>
+            <th>Region</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+        </tr>
+        {% for station in stations %}
+        <tr>
+            <td>{{ station.station_name }}</td>
+            <td>{{ station.region }}</td>
+            <td>{{ "%.4f"|format(station.latitude) }}</td>
+            <td>{{ "%.4f"|format(station.longitude) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No weather stations found. Try different search criteria.</p>
+    {% endif %}
+    
+    {% if summary %}
+    <h2>Table 2: Regional Summary</h2>
+    <table>
+        <tr>
+            <th>Region</th>
+            <th>Number of Stations</th>
+            <th>Average {{ summary[0].metric_name if summary }}</th>
+        </tr>
+        {% for region in summary %}
+        <tr>
+            <td>{{ region.region }}</td>
+            <td>{{ region.station_count }}</td>
+            <td>{{ region.avg_value if region.avg_value else "No data" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+    
+    <h3>What to do next:</h3>
+    <p><a href="/weather-stations">Search again</a></p>
+    <p><a href="/similar-stations">Find similar stations</a></p>
+</body>
+</html>

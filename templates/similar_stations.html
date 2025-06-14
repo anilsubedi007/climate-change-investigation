@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Similar Stations Analysis</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        h1 { color: blue; }
+        h2 { color: green; }
+        input, select { padding: 5px; margin: 5px; }
+        button { padding: 10px; background-color: lightgreen; border: 1px solid black; }
+        .form-section { background-color: #f0f0f0; padding: 15px; margin: 10px 0; }
+        .info-box { background-color: lightyellow; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Similar Weather Stations Analysis</h1>
+    <p><a href="/">Back to Home</a></p>
+    
+    <h2>Level 3: Find Similar Climate Change Patterns</h2>
+    
+    <div class="info-box">
+        <b>What this does:</b><br>
+        This analysis compares how temperature changed at different weather stations 
+        between 2015 and 2020. It finds stations that had similar temperature changes 
+        to your chosen reference station.
+    </div>
+    
+    <div class="form-section">
+        <h3>Analysis Settings</h3>
+        <form method="POST" action="/similar-stations/analyze">
+            <p>
+                <label>Choose Reference Station:</label><br>
+                <select name="reference_station" required>
+                    <option value="">-- Select Station --</option>
+                    {% for station in stations %}
+                    <option value="{{ station.station_id }}">{{ station.station_name }} ({{ station.state }})</option>
+                    {% endfor %}
+                </select><br>
+                <small>This is the station we will compare others to</small>
+            </p>
+            
+            <p>
+                <label>How many similar stations to find:</label><br>
+                <select name="num_similar">
+                    <option value="3">3 stations</option>
+                    <option value="5" selected>5 stations</option>
+                    <option value="7">7 stations</option>
+                </select>
+            </p>
+            
+            <p>
+                <label>Start Year:</label>
+                <select name="start_year">
+                    <option value="2015" selected>2015</option>
+                    <option value="2016">2016</option>
+                </select>
+                
+                <label>End Year:</label>
+                <select name="end_year">
+                    <option value="2020" selected>2020</option>
+                    <option value="2019">2019</option>
+                </select>
+            </p>
+            
+            <p>
+                <button type="submit">Find Similar Stations</button>
+            </p>
+        </form>
+    </div>
+    
+    
+</body>
+</html>

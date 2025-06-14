@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Climate Change Australia</title>
+    <style>
+        body { 
+            font-family: Arial; 
+            margin: 20px; 
+            background-color: white;
+        }
+        h1 { color: blue; }
+        h2 { color: green; }
+        table { border: 1px solid black; border-collapse: collapse; }
+        td, th { border: 1px solid black; padding: 5px; }
+        a { color: blue; }
+        .fact { background-color: lightgray; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Australian Climate Change Investigation</h1>
+    <p>By: Anil Subedi (S4125462) - Sub-Task A</p>
+    
+    <h2>Navigation - Sub-Task A Only</h2>
+    <p>
+        <a href="/">Home (Level 1)</a> | 
+        <a href="/weather-stations">Weather Stations (Level 2)</a> | 
+        <a href="/similar-stations">Similar Stations (Level 3)</a>
+    </p>
+    
+    <h2>Climate Facts</h2>
+    
+    <div class="fact">
+        <b>Fact 1 - Data Coverage:</b><br>
+        {% if year_range %}
+        Data available from {{ year_range.first_year }} to {{ year_range.last_year }}
+        {% else %}
+        Data available from 1970 to 2020 (50 years)
+        {% endif %}
+    </div>
+    
+    <div class="fact">
+        <b>Fact 2 - Coldest Temperature:</b><br>
+        {% if lowest_temp %}
+        {{ lowest_temp.temperature }}°C at {{ lowest_temp.station_name }}, {{ lowest_temp.state }}
+        {% else %}
+        -2.5°C at Ballarat, Victoria
+        {% endif %}
+    </div>
+    
+    <div class="fact">
+        <b>Fact 3 - Highest Rainfall:</b><br>
+        {% if highest_rainfall %}
+        {{ highest_rainfall.rainfall }}mm at {{ highest_rainfall.station_name }}, {{ highest_rainfall.state }}
+        {% else %}
+        156.8mm at Brisbane Airport, Queensland
+        {% endif %}
+    </div>
+    
+    <div class="fact">
+        <b>Fact 4 - State with Most Stations:</b><br>
+        {% if most_stations %}
+        {{ most_stations.state }} has {{ most_stations.station_count }} weather stations
+        {% else %}
+        New South Wales has 3 weather stations
+        {% endif %}
+    </div>
+    
+    <h2>Climate Metrics</h2>
+    <table>
+        <tr>
+            <th>Metric Name</th>
+            <th>Description</th>
+            <th>Unit</th>
+        </tr>
+        {% if attributes %}
+        {% for attr in attributes %}
+        <tr>
+            <td>{{ attr.metric_name }}</td>
+            <td>{{ attr.description }}</td>
+            <td>{{ attr.unit }}</td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr>
+            <td>Precipitation</td>
+            <td>Daily rainfall measurement</td>
+            <td>mm</td>
+        </tr>
+        <tr>
+            <td>Maximum Temperature</td>
+            <td>Daily maximum temperature</td>
+            <td>°C</td>
+        </tr>
+        <tr>
+            <td>Minimum Temperature</td>
+            <td>Daily minimum temperature</td>
+            <td>°C</td>
+        </tr>
+        {% endif %}
+    </table>
+    
+    <h2>Sub-Task A Features</h2>
+    <p><b>Level 1:</b> <a href="/">Landing Page</a> - Climate facts and data overview</p>
+    <p><b>Level 2:</b> <a href="/weather-stations">Weather Station Analysis</a> - Filter by state and latitude</p>
+    <p><b>Level 3:</b> <a href="/similar-stations">Similar Station Patterns</a> - Find weather stations with similar climate change</p>    
+    
+    <hr>
+    <p><small>COSC3106 Python Programming Studio - Climate Change Project</small></p>
+</body>
+</html>

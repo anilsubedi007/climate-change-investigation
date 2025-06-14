@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather Stations Search</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        h1 { color: blue; }
+        h2 { color: green; }
+        table { border: 1px solid black; border-collapse: collapse; width: 100%; }
+        td, th { border: 1px solid black; padding: 5px; text-align: left; }
+        input, select { padding: 5px; margin: 5px; }
+        button { padding: 10px; background-color: lightblue; border: 1px solid black; }
+        .form-section { background-color: #f0f0f0; padding: 15px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Weather Stations Search</h1>
+    <p><a href="/">Back to Home</a></p>
+    
+    <h2>Level 2: Search for Weather Stations</h2>
+    
+    <div class="form-section">
+        <h3>Search Form</h3>
+        <form method="POST" action="/weather-stations/search">
+            <p>
+                <label>Select State:</label><br>
+                <select name="state" required>
+                    <option value="">-- Choose State --</option>
+                    {% for state in states %}
+                    <option value="{{ state.state }}">{{ state.state }}</option>
+                    {% endfor %}
+                </select>
+            </p>
+            
+            <p>
+                <label>Start Latitude:</label><br>
+                <input type="number" name="start_lat" value="-40" step="0.1" required>
+                (Southern boundary)
+            </p>
+            
+            <p>
+                <label>End Latitude:</label><br>
+                <input type="number" name="end_lat" value="-30" step="0.1" required>
+                (Northern boundary)
+            </p>
+            
+            <p>
+                <label>Climate Metric (optional):</label><br>
+                <select name="metric_id">
+                    <option value="">-- No metric selected --</option>
+                    {% for metric in metrics %}
+                    <option value="{{ metric.metric_id }}">{{ metric.metric_name }}</option>
+                    {% endfor %}
+                </select>
+            </p>
+            
+            <p>
+                <label>Sort by:</label><br>
+                <select name="sort_by">
+                    <option value="station_name">Station Name</option>
+                    <option value="latitude">Latitude</option>
+                    <option value="region">Region</option>
+                </select>
+            </p>
+            
+            <p>
+                <button type="submit">Search Weather Stations</button>
+            </p>
+        </form>
+    </div>
+    
+</body>
+</html>

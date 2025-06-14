@@ -1,0 +1,173 @@
+from flask import Flask, render_template, request
+import sqlite3
+
+app = Flask(__name__)
+DATABASE = 'climate_change.db'
+
+def get_db_connection():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+@app.route('/')
+def landing_page():
+    """Level 1: Landing page with 4 climate facts"""
+    conn = get_db_connection()
+    
+    try:
+        # Fact 1: Year range
+        year_range = conn.execute('''
+            SELECT MIN(dt.year) as first_year, MAX(dt.year) as last_year
+            FROM DateTime dt
+        ''').fetchone()
+        
+        # Fact 2: Lowest temperature
+        lowest_temp = conn.execute('''
+            SELECT ws.station_name, ws.state, cd.value as temperature
+            FROM ClimateData cd
+            JOIN WeatherStation ws ON cd.station_id = ws.station_id
+            JOIN ClimateMetric cm ON cd.metric_id = cm.metric_id
+            WHERE cm.metric_code = 'TMIN'
+            ORDER BY cd.value ASC LIMIT 1
+        ''').fetchone()
+        
+        # Fact 3: Highest rainfall
+        highest_rainfall = conn.execute('''
+            SELECT ws.station_name, ws.state, cd.value as rainfall
+            FROM ClimateData cd
+            JOIN WeatherStation ws ON cd.station_id = ws.station_id
+            JOIN ClimateMetric cm ON cd.metric_id = cm.metric_id
+            WHERE cm.metric_code = 'PRCP'
+            ORDER BY cd.value DESC LIMIT 1
+        ''').fetchone()
+        
+        # Fact 4: State with most stations
+        most_stations = conn.execute('''
+            SELECT state, COUNT(*) as station_count
+            FROM WeatherStation GROUP BY state
+            ORDER BY station_count DESC LIMIT 1
+        ''').fetchone()
+        
+        # Climate attributes
+        attributes = conn.execute('''
+            SELECT metric_name, description, unit FROM ClimateMetric
+        ''').fetchall()
+        
+        conn.close()
+        return render_template('landing.html', 
+                             year_range=year_range,
+                             lowest_temp=lowest_temp,
+                             highest_rainfall=highest_rainfall,
+                             most_stations=most_stations,
+                             attributes=attributes)
+    except Exception as e:
+        conn.close()
+        return f"<h1>Error:</h1><p>{e}</p>"
+
+@app.route('/weather-stations')
+def weather_stations():
+    """Level 2: Weather station analysis page"""
+    conn = get_db_connection()
+    states = conn.execute('SELECT DISTINCT state FROM WeatherStation ORDER BY state').fetchall()
+    metrics = conn.execute('SELECT metric_id, metric_name FROM ClimateMetric').fetchall()
+    conn.close()
+    return render_template('weather_stations.html', states=states, metrics=metrics)
+
+@app.route('/weather-stations/search', methods=['POST'])
+def search_weather_stations():
+    """Level 2: Handle weather station search"""
+    conn = get_db_connection()
+    
+    state = request.form.get('state')
+    start_lat = float(request.form.get('start_lat', -90))
+    end_lat = float(request.form.get('end_lat', 90))
+    metric_id = request.form.get('metric_id')
+    
+    # Table 1: Station details
+    stations = conn.execute('''
+        SELECT station_name, region, latitude, longitude
+        FROM WeatherStation
+        WHERE state = ? AND latitude BETWEEN ? AND ?
+        ORDER BY station_name
+    ''', (state, start_lat, end_lat)).fetchall()
+    
+    # Table 2: Regional summary
+    if metric_id:
+        summary = conn.execute('''
+            SELECT ws.region, COUNT(ws.station_id) as station_count,
+                   ROUND(AVG(cd.value), 2) as avg_value, cm.metric_name
+            FROM WeatherStation ws
+            LEFT JOIN ClimateData cd ON ws.station_id = cd.station_id
+            LEFT JOIN ClimateMetric cm ON cd.metric_id = cm.metric_id
+            WHERE ws.state = ? AND ws.latitude BETWEEN ? AND ? AND cm.metric_id = ?
+            GROUP BY ws.region
+        ''', (state, start_lat, end_lat, metric_id)).fetchall()
+    else:
+        summary = []
+    
+    conn.close()
+    return render_template('weather_stations_results.html', 
+                         stations=stations, summary=summary,
+                         search_params={'state': state, 'start_lat': start_lat, 'end_lat': end_lat})
+
+@app.route('/similar-stations')
+def similar_stations():
+    """Level 3: Similar weather stations analysis"""
+    conn = get_db_connection()
+    stations = conn.execute('SELECT station_id, station_name, state FROM WeatherStation').fetchall()
+    conn.close()
+    return render_template('similar_stations.html', stations=stations)
+
+@app.route('/similar-stations/analyze', methods=['POST'])
+def analyze_similar_stations():
+    """Level 3: Find similar weather stations"""
+    conn = get_db_connection()
+    
+    ref_station = request.form.get('reference_station')
+    
+    # Calculate temperature change for reference station (2015 vs 2020)
+    ref_change = conn.execute('''
+        WITH ref_temps AS (
+            SELECT AVG(CASE WHEN dt.year = 2015 THEN cd.value END) as temp_2015,
+                   AVG(CASE WHEN dt.year = 2020 THEN cd.value END) as temp_2020
+            FROM ClimateData cd
+            JOIN DateTime dt ON cd.date = dt.date
+            JOIN ClimateMetric cm ON cd.metric_id = cm.metric_id
+            WHERE cd.station_id = ? AND cm.metric_code = 'TMAX'
+        )
+        SELECT temp_2015, temp_2020, 
+               ROUND(((temp_2020 - temp_2015) / temp_2015 * 100), 2) as pct_change
+        FROM ref_temps
+    ''', (ref_station,)).fetchone()
+    
+    # Find similar stations
+    similar = conn.execute('''
+        WITH station_changes AS (
+            SELECT ws.station_id, ws.station_name, ws.state,
+                   AVG(CASE WHEN dt.year = 2015 THEN cd.value END) as temp_2015,
+                   AVG(CASE WHEN dt.year = 2020 THEN cd.value END) as temp_2020,
+                   ROUND(((AVG(CASE WHEN dt.year = 2020 THEN cd.value END) - 
+                          AVG(CASE WHEN dt.year = 2015 THEN cd.value END)) / 
+                          AVG(CASE WHEN dt.year = 2015 THEN cd.value END) * 100), 2) as pct_change
+            FROM WeatherStation ws
+            JOIN ClimateData cd ON ws.station_id = cd.station_id
+            JOIN DateTime dt ON cd.date = dt.date
+            JOIN ClimateMetric cm ON cd.metric_id = cm.metric_id
+            WHERE cm.metric_code = 'TMAX' AND ws.station_id != ?
+            GROUP BY ws.station_id
+        )
+        SELECT *, ABS(pct_change - ?) as difference
+        FROM station_changes
+        WHERE temp_2015 IS NOT NULL AND temp_2020 IS NOT NULL
+        ORDER BY difference ASC LIMIT 3
+    ''', (ref_station, ref_change['pct_change'])).fetchall()
+    
+    # Get reference station info
+    ref_info = conn.execute('SELECT station_name, state FROM WeatherStation WHERE station_id = ?', (ref_station,)).fetchone()
+    
+    conn.close()
+    return render_template('similar_stations_results.html', 
+                         ref_info=ref_info, ref_change=ref_change, similar=similar)
+
+if __name__ == '__main__':
+    print("Starting Flask app...")

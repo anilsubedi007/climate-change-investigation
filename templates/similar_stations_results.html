@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Similar Stations Results</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        h1 { color: blue; }
+        h2 { color: green; }
+        table { border: 1px solid black; border-collapse: collapse; width: 100%; }
+        td, th { border: 1px solid black; padding: 5px; }
+        th { background-color: lightgray; }
+        .reference { background-color: lightyellow; padding: 10px; margin: 10px 0; }
+        .positive { color: red; font-weight: bold; }
+        .negative { color: blue; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Similar Stations Analysis Results</h1>
+    <p><a href="/similar-stations">Back to Analysis</a> | <a href="/">Home</a></p>
+    
+    <h2>Reference Station</h2>
+    <div class="reference">
+        <b>Station:</b> {{ ref_info.station_name }}, {{ ref_info.state }}<br>
+        <b>{{ analysis_params.start_year }} Average Temperature:</b> {{ "%.1f"|format(ref_change.temp_2015) }}°C<br>
+        <b>{{ analysis_params.end_year }} Average Temperature:</b> {{ "%.1f"|format(ref_change.temp_2020) }}°C<br>
+        <b>Temperature Change:</b> 
+        <span class="{% if ref_change.pct_change > 0 %}positive{% else %}negative{% endif %}">
+            {% if ref_change.pct_change > 0 %}+{% endif %}{{ ref_change.pct_change }}%
+        </span>
+    </div>
+    
+    <h2>Most Similar Weather Stations</h2>
+    <p>These stations had similar temperature change patterns from {{ analysis_params.start_year }} to {{ analysis_params.end_year }}:</p>
+    
+    {% if similar %}
+    <table>
+        <tr>
+            <th>Rank</th>
+            <th>Station Name</th>
+            <th>State</th>
+            <th>{{ analysis_params.start_year }} Temp</th>
+            <th>{{ analysis_params.end_year }} Temp</th>
+            <th>% Change</th>
+            <th>Difference from Reference</th>
+        </tr>
+        {% for station in similar %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ station.station_name }}</td>
+            <td>{{ station.state }}</td>
+            <td>{{ "%.1f"|format(station.temp_2015) }}°C</td>
+            <td>{{ "%.1f"|format(station.temp_2020) }}°C</td>
+            <td class="{% if station.pct_change > 0 %}positive{% else %}negative{% endif %}">
+                {% if station.pct_change > 0 %}+{% endif %}{{ station.pct_change }}%
+            </td>
+            <td>{{ "%.2f"|format(station.difference) }}%</td>
+        </tr>
+        {% endfor %}
+    </table>
+    
+    <h3>What this means:</h3>
+    <ul>
+        <li>Rank 1 is the most similar to your reference station</li>
+        <li>Red numbers show temperature increases (warming)</li>
+        <li>Blue numbers show temperature decreases (cooling)</li>
+        <li>Lower "Difference from Reference" means more similar</li>
+    </ul>
+    
+    <h3>Summary:</h3>
+    <p>
+        {% if ref_change.pct_change > 0 %}
+        Your reference station got warmer by {{ ref_change.pct_change }}%. 
+        {% else %}
+        Your reference station got cooler by {{ ref_change.pct_change }}%. 
+        {% endif %}
+        The stations listed above had similar changes, suggesting regional climate patterns.
+    </p>
+    
+    {% else %}
+    <p>No similar stations found. Try selecting a different reference station.</p>
+    {% endif %}
+    
+    <h3>What to do next:</h3>
+    <p><a href="/similar-stations">Try another analysis</a></p>
+    <p><a href="/weather-stations">Look at weather station details</a></p>
+</body>
+</html>
