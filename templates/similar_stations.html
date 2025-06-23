@@ -3,71 +3,186 @@
 <head>
     <title>Similar Stations Analysis</title>
     <style>
-        body { font-family: Arial; margin: 20px; }
-        h1 { color: blue; }
-        h2 { color: green; }
-        input, select { padding: 5px; margin: 5px; }
-        button { padding: 10px; background-color: lightgreen; border: 1px solid black; }
-        .form-section { background-color: #f0f0f0; padding: 15px; margin: 10px 0; }
-        .info-box { background-color: lightyellow; padding: 10px; margin: 10px 0; }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        h1 { 
+            color: #2c3e50; 
+            margin-bottom: 10px;
+        }
+        
+        h2 { 
+            color: #6c5ce7; 
+            margin-bottom: 15px;
+        }
+        
+        .breadcrumb {
+            background: white;
+            border-radius: 10px;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .breadcrumb a {
+            color: #6c5ce7;
+            text-decoration: none;
+        }
+        
+        .info-box {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-left: 4px solid #6c5ce7;
+        }
+        
+        .form-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        input, select { 
+            width: 100%;
+            padding: 10px; 
+            border: 2px solid #ddd; 
+            border-radius: 5px; 
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        
+        input:focus, select:focus {
+            border-color: #6c5ce7;
+            outline: none;
+        }
+        
+        button { 
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 15px 40px; 
+            border-radius: 5px; 
+            font-size: 1em;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        button:hover {
+            background: #5b4cdb;
+        }
+        
+        small {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
-    <h1>Similar Weather Stations Analysis</h1>
-    <p><a href="/">Back to Home</a></p>
-    
-    <h2>Level 3: Find Similar Climate Change Patterns</h2>
-    
-    <div class="info-box">
-        <b>What this does:</b><br>
-        This analysis compares how temperature changed at different weather stations 
-        between 2015 and 2020. It finds stations that had similar temperature changes 
-        to your chosen reference station.
-    </div>
-    
-    <div class="form-section">
-        <h3>Analysis Settings</h3>
-        <form method="POST" action="/similar-stations/analyze">
-            <p>
-                <label>Choose Reference Station:</label><br>
-                <select name="reference_station" required>
-                    <option value="">-- Select Station --</option>
-                    {% for station in stations %}
-                    <option value="{{ station.station_id }}">{{ station.station_name }} ({{ station.state }})</option>
-                    {% endfor %}
-                </select><br>
-                <small>This is the station we will compare others to</small>
-            </p>
-            
-            <p>
-                <label>How many similar stations to find:</label><br>
-                <select name="num_similar">
-                    <option value="3">3 stations</option>
-                    <option value="5" selected>5 stations</option>
-                    <option value="7">7 stations</option>
-                </select>
-            </p>
-            
-            <p>
-                <label>Start Year:</label>
-                <select name="start_year">
-                    <option value="2015" selected>2015</option>
-                    <option value="2016">2016</option>
-                </select>
+    <div class="container">
+        <div class="header">
+            <h1>Similar Weather Stations Analysis</h1>
+        </div>
+        
+        <div class="breadcrumb">
+            <a href="/">Back to Home</a>
+        </div>
+        
+        <div class="info-box">
+            <h2>Level 3: Find Similar Climate Change Patterns</h2>
+            <b>What this does:</b><br>
+            This analysis compares how temperature changed at different weather stations 
+            between 2015 and 2020. It finds stations that had similar temperature changes 
+            to your chosen reference station.
+        </div>
+        
+        <div class="form-section">
+            <h3>Analysis Settings</h3>
+            <form method="POST" action="/similar-stations/analyze">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Choose Reference Station:</label>
+                        <select name="reference_station" required>
+                            <option value="">-- Select Station --</option>
+                            {% for station in stations %}
+                            <option value="{{ station.station_id }}">{{ station.station_name }} ({{ station.state }})</option>
+                            {% endfor %}
+                        </select>
+                        <small>This is the station we will compare others to</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>How many similar stations to find:</label>
+                        <select name="num_similar">
+                            <option value="3">3 stations</option>
+                            <option value="5" selected>5 stations</option>
+                            <option value="7">7 stations</option>
+                        </select>
+                    </div>
+                </div>
                 
-                <label>End Year:</label>
-                <select name="end_year">
-                    <option value="2020" selected>2020</option>
-                    <option value="2019">2019</option>
-                </select>
-            </p>
-            
-            <p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Start Year:</label>
+                        <select name="start_year">
+                            <option value="2015" selected>2015</option>
+                            <option value="2016">2016</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>End Year:</label>
+                        <select name="end_year">
+                            <option value="2020" selected>2020</option>
+                            <option value="2019">2019</option>
+                        </select>
+                    </div>
+                </div>
+                
                 <button type="submit">Find Similar Stations</button>
-            </p>
-        </form>
+            </form>
+        </div>
     </div>
-    
-    
 </body>
 </html>
