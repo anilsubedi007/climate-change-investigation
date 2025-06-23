@@ -3,68 +3,193 @@
 <head>
     <title>Weather Station Results</title>
     <style>
-        body { font-family: Arial; margin: 20px; }
-        h1 { color: blue; }
-        h2 { color: green; }
-        table { border: 1px solid black; border-collapse: collapse; width: 100%; }
-        td, th { border: 1px solid black; padding: 5px; }
-        th { background-color: lightgray; }
-        .summary { background-color: lightyellow; padding: 10px; margin: 10px 0; }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        h1 { 
+            color: #2c3e50; 
+            margin-bottom: 10px;
+        }
+        
+        h2 { 
+            color: #3498db; 
+            margin-bottom: 15px;
+        }
+        
+        .breadcrumb {
+            background: white;
+            border-radius: 10px;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .breadcrumb a {
+            color: #3498db;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+        
+        .summary {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .table-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        table { 
+            width: 100%;
+            border-collapse: collapse; 
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: #34495e;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+        
+        td { 
+            padding: 12px 15px; 
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        tr:hover td {
+            background: #f8f9fa;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        
+        .actions {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .actions a {
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 0 10px;
+            display: inline-block;
+        }
+        
+        .actions a:hover {
+            background: #2980b9;
+        }
     </style>
 </head>
 <body>
-    <h1>Search Results</h1>
-    <p><a href="/weather-stations">Back to Search</a> | <a href="/">Home</a></p>
-    
-    <div class="summary">
-        <b>Search Summary:</b><br>
-        State: {{ search_params.state }}<br>
-        Latitude Range: {{ search_params.start_lat }} to {{ search_params.end_lat }}<br>
-        Found {{ stations|length }} weather stations.
+    <div class="container">
+        <div class="header">
+            <h1>Search Results</h1>
+        </div>
+        
+        <div class="breadcrumb">
+            <a href="/weather-stations">Back to Search</a> | <a href="/">Home</a>
+        </div>
+        
+        <div class="summary">
+            <b>Search Summary:</b><br>
+            State: {{ search_params.state }}<br>
+            Latitude Range: {{ search_params.start_lat }} to {{ search_params.end_lat }}<br>
+            Found {{ stations|length }} weather stations.
+        </div>
+        
+        {% if stations %}
+        <div class="table-section">
+            <h2>Table 1: Weather Station Details</h2>
+            <table>
+                <tr>
+                    <th>Station Name</th>
+                    <th>Region</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                </tr>
+                {% for station in stations %}
+                <tr>
+                    <td>{{ station.station_name }}</td>
+                    <td>{{ station.region }}</td>
+                    <td>{{ "%.4f"|format(station.latitude) }}</td>
+                    <td>{{ "%.4f"|format(station.longitude) }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% else %}
+        <div class="table-section">
+            <div class="no-data">
+                <h3>No weather stations found</h3>
+                <p>Try different search criteria.</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if summary %}
+        <div class="table-section">
+            <h2>Table 2: Regional Summary</h2>
+            <table>
+                <tr>
+                    <th>Region</th>
+                    <th>Number of Stations</th>
+                    <th>Average {{ summary[0].metric_name if summary }}</th>
+                </tr>
+                {% for region in summary %}
+                <tr>
+                    <td>{{ region.region }}</td>
+                    <td>{{ region.station_count }}</td>
+                    <td>{{ region.avg_value if region.avg_value else "No data" }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
+        
+        <div class="actions">
+            <h3>What to do next:</h3>
+            <a href="/weather-stations">Search again</a>
+            <a href="/similar-stations">Find similar stations</a>
+        </div>
     </div>
-    
-    <h2>Table 1: Weather Station Details</h2>
-    {% if stations %}
-    <table>
-        <tr>
-            <th>Station Name</th>
-            <th>Region</th>
-            <th>Latitude</th>
-            <th>Longitude</th>
-        </tr>
-        {% for station in stations %}
-        <tr>
-            <td>{{ station.station_name }}</td>
-            <td>{{ station.region }}</td>
-            <td>{{ "%.4f"|format(station.latitude) }}</td>
-            <td>{{ "%.4f"|format(station.longitude) }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    {% else %}
-    <p>No weather stations found. Try different search criteria.</p>
-    {% endif %}
-    
-    {% if summary %}
-    <h2>Table 2: Regional Summary</h2>
-    <table>
-        <tr>
-            <th>Region</th>
-            <th>Number of Stations</th>
-            <th>Average {{ summary[0].metric_name if summary }}</th>
-        </tr>
-        {% for region in summary %}
-        <tr>
-            <td>{{ region.region }}</td>
-            <td>{{ region.station_count }}</td>
-            <td>{{ region.avg_value if region.avg_value else "No data" }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    {% endif %}
-    
-    <h3>What to do next:</h3>
-    <p><a href="/weather-stations">Search again</a></p>
-    <p><a href="/similar-stations">Find similar stations</a></p>
 </body>
 </html>
